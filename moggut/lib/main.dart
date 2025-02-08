@@ -1,7 +1,11 @@
-import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'entry_page.dart';
+import 'my_home_page.dart';
+import 'package:flutter_quill/flutter_quill.dart';
+import "dart:convert";
+import 'dart:async';
+import 'dart:io';
+
 void main() {
   runApp(MyApp());
 }
@@ -26,61 +30,54 @@ class MyApp extends StatelessWidget {
 }
 
 class MyAppState extends ChangeNotifier {
-  //day, prompt
-  List<List> entryList = [["day 1","prompt 1", "file1"],["day 2","prompt 2", "file2"],["day 3","prompt 3", "file3"]];
-
-}
-
-class MyHomePage extends StatefulWidget {
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
   
-  var selectedIndex = 0;
+  //day, prompt
+  int dayCount = 0;
+  List entryList = [];
+  QuillController controller = QuillController.basic();
 
-  @override
-  Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
-    Widget page;
+  //loads entryList from file at app start (and maybe each build?).
+  Future<List> fetchPrefs() async {
+    //only run the first time
+    if (entryList.isNotEmpty) {
+      return entryList;
+    }
+    print("fetchPrefs activated");
+    String contents = await File("files/entry_list.txt").readAsString();
+    final json = jsonDecode(contents);
+    entryList = json.map((e) => List<String>.from(e)).toList();
+    dayCount = entryList.length-1;
+    return entryList;
+}
 
-    page = EntryPage(day: appState.entryList[selectedIndex][0], prompt: appState.entryList[selectedIndex][1], fileId: appState.entryList[selectedIndex][2],);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Scaffold(
-          body: Row(
-            children: [
-              SafeArea(
-                child: NavigationRail(
-                  extended: constraints.maxWidth >= 600,
-                  destinations: appState.entryList.map((e) {
-                    return NavigationRailDestination(
-                      icon: Icon(Icons.home),
-                      label: Text(e[0]),
-                    );
-                  }).toList(),
-                  selectedIndex: selectedIndex,
-                  onDestinationSelected: (value) {
-                    print('new index selected: $value');
-                    setState(() {
-                      selectedIndex = value;
-                      });
-                  },
-                  backgroundColor:Theme.of(context).colorScheme.inversePrimary,
-                ),
-              ),
-              Expanded(
-                child: Container(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  child: page,
-                ),
-              ),
-            ],
-          ),
-        );
-      }
-    );
+  void saveEntry(QuillController controller, String filename) async {
+    //should only work on desktop
+    final json = jsonEncode(controller.document.toDelta().toJson());
+    //static access uses class name, nonstatic access uses widget
+    var file = await File(filename).writeAsString(json);
+    print('file length: ${file.length()}');
   }
+
+  void retrieveEntry(QuillController controller, String filename) async {
+    File(filename).readAsString().then((contents) {
+    final json = jsonDecode(contents);
+    controller.document = Document.fromJson(json);
+    });
+  }
+
+  void createNewPage() async {
+    dayCount += 1;
+    entryList.insert(entryList.length-1,["day $dayCount","prompt $dayCount", "files/file$dayCount.txt"]);
+    //json encode to bypass format errror: control character in string
+    var file = await File("files/file$dayCount.txt").writeAsString(jsonEncode([{"insert":"\n"}]));
+    print('file length: ${file.length()}');
+    file = await File("files/entry_list.txt").writeAsString(jsonEncode(entryList));
+    print('file length: ${file.length()}');
+  }
+    @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+}
 }
 

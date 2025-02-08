@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import "dart:convert";
 import 'dart:async';
 import 'dart:io';
+import 'main.dart';
 
 class EntryPage extends StatefulWidget {
   const EntryPage({
     super.key,
     required this.prompt,
     required this.day,
-    required this.fileId,
+    required this.filename,
     /*required this.day,
     required this.fileName*/
   });
   final String prompt;
   final String day;
-  final String fileId;
+  final String filename;
   @override
   State<EntryPage> createState() => _EntryPageState();
 }
@@ -23,31 +25,13 @@ class EntryPage extends StatefulWidget {
 class _EntryPageState extends State<EntryPage> {
   /*final DateTime day;
   final String fileName;*/
-  QuillController _controller = QuillController.basic();
-  @override
-  void initState() {
-    super.initState();
 
-  }
-  void saveEntry() async {
-    //should only work on desktop
-    final json = jsonEncode(_controller.document.toDelta().toJson());
-    //static access uses class name, nonstatic access uses widget
-    final filename = 'files/${widget.fileId}.txt';
-    var file = await File(filename).writeAsString(json);
-    print('file length: ${file.length()}');
-  }
-  void retrieveEntry(String) async {
-    final filename = 'files/${widget.fileId}.txt';
-    File(filename).readAsString().then((contents) {
-    final json = jsonDecode(contents);
-    _controller.document = Document.fromJson(json);
-    });
-    
-  }
   @override
   Widget build(BuildContext context) {
-    retrieveEntry(widget.fileId);
+
+    var appState = context.watch<MyAppState>();
+    appState.retrieveEntry(appState.controller,widget.filename);
+
     return Scaffold(
       body: Center(
         child: Column(
@@ -56,14 +40,14 @@ class _EntryPageState extends State<EntryPage> {
               padding: const EdgeInsets.all(20),
               child: Text('Day: ${widget.day} Prompt: ${widget.prompt}'),
             ),
-            ElevatedButton(onPressed: () => saveEntry(), child: Text('Save')),
+            ElevatedButton(onPressed: () => appState.saveEntry(appState.controller,widget.filename), child: Text('Save')),
             QuillSimpleToolbar(
-              controller: _controller,
+              controller: appState.controller,
               configurations: const QuillSimpleToolbarConfigurations()
               ),
             Expanded(
               child: QuillEditor.basic(
-                controller: _controller,
+                controller: appState.controller,
                 configurations: const QuillEditorConfigurations(),
               ),
             )
@@ -73,8 +57,4 @@ class _EntryPageState extends State<EntryPage> {
     );
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-}}
+}

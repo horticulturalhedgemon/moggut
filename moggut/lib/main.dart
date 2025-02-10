@@ -5,6 +5,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import "dart:convert";
 import 'dart:async';
 import 'dart:io';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(MyApp());
@@ -67,7 +68,14 @@ class MyAppState extends ChangeNotifier {
 
   void createNewPage() async {
     dayCount += 1;
-    entryList.insert(entryList.length-1,["day $dayCount","prompt $dayCount", "files/file$dayCount.txt"]);
+    var returnPrompt = 'prompt $dayCount';
+    final response = await http.get(Uri.parse('http://127.0.0.1:5000'));
+      if (response.statusCode == 200) {
+        var responseBody = response.body;
+        returnPrompt = '$responseBody $dayCount';
+      }
+
+    entryList.insert(entryList.length-1,["day $dayCount",returnPrompt, "files/file$dayCount.txt"]);
     //json encode to bypass format errror: control character in string
     var file = await File("files/file$dayCount.txt").writeAsString(jsonEncode([{"insert":"\n"}]));
     print('file length: ${file.length()}');

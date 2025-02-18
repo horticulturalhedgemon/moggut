@@ -51,35 +51,53 @@ class MyAppState extends ChangeNotifier {
     return entryList;
 }
 
-  void saveEntry(QuillController controller, String filename) async {
+  void saveEntry(QuillController controller, String fileId) async {
     //should only work on desktop
-    final json = jsonEncode(controller.document.toDelta().toJson());
-    //static access uses class name, nonstatic access uses widget
-    var file = await File(filename).writeAsString(json);
-    print('file length: ${file.length()}');
+    final jsonEntry = jsonEncode(controller.document.toDelta().toJson());
+    final response = await http.put(Uri.parse('http://127.0.0.1:5000/api/entry/$fileId'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEntry);
+    if (response.statusCode == 200) {
+      print('file save success!');
+    }
+    else {
+      print('http call failed, status code ${response.statusCode.toString()}');
+    }
   }
 
-  void retrieveEntry(QuillController controller, String filename) async {
-    File(filename).readAsString().then((contents) {
-    final json = jsonDecode(contents);
-    controller.document = Document.fromJson(json);
-    });
+  void retrieveEntry(QuillController controller, String fileId) async {
+      final response = await http.get(Uri.parse('http://127.0.0.1:5000/api/entry/$fileId'));
+      if (response.statusCode == 200) {
+        var responseBody = jsonDecode(response.body);
+        controller.document = Document.fromJson(responseBody);
+      }
+      else {
+        print('http call failed, status code ${response.statusCode.toString()}');
+      }
   }
 
   void createNewPage() async {
     dayCount += 1;
     var returnPrompt = 'prompt $dayCount';
-    final response = await http.get(Uri.parse('http://127.0.0.1:5000'));
+    final response = await http.get(Uri.parse('http://127.0.0.1:5000/api/prompt'));
       if (response.statusCode == 200) {
         var responseBody = response.body;
-        returnPrompt = '$responseBody $dayCount';
+        returnPrompt = '$responseBody $dayCount test';
       }
-
-    entryList.insert(entryList.length-1,["day $dayCount",returnPrompt, "files/file$dayCount.txt"]);
-    //json encode to bypass format errror: control character in string
-    var file = await File("files/file$dayCount.txt").writeAsString(jsonEncode([{"insert":"\n"}]));
-    print('file length: ${file.length()}');
-    file = await File("files/entry_list.txt").writeAsString(jsonEncode(entryList));
+      else {
+        returnPrompt = 'http call failed, status code ${response.statusCode.toString()}';
+      }
+    entryList.insert(entryList.length-1,["day $dayCount",returnPrompt, "$dayCount"]);
+    final response2 = await http.put(Uri.parse('http://127.0.0.1:5000/api/entry/${dayCount.toString()}'),
+      headers: {'Content-Type': 'application/json'},
+      body: [{"insert":"\n"}]);
+    if (response2.statusCode == 200) {
+      print('file save success!');
+    }
+    else {
+      print('http call failed, status code ${response2.statusCode.toString()}');
+    }
+    var file = await File("files/entry_list.txt").writeAsString(jsonEncode(entryList));
     print('file length: ${file.length()}');
   }
     @override

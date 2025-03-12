@@ -36,26 +36,36 @@ class _MyHomePageState extends State<MyHomePage> {
           body: Row(
             children: [
               SafeArea(
-                child: NavigationRail(
-                  extended: constraints.maxWidth >= 600,
-                  destinations: appState.entryList.map((e) {
-                    return NavigationRailDestination(
-                      icon: Icon(Icons.home),
-                      label: Text(e[0]),
-                    );
-                  }).toList(),
-                  selectedIndex: selectedIndex,
-                  onDestinationSelected: (value) {
-                    print('new index selected: $value');
-                    setState(() {
-                      if (value == appState.entryList.length-1) {
-                        appState.createNewPage();
-                      }
-                      selectedIndex = value;
-                      });
-                  },
-                  backgroundColor:Theme.of(context).colorScheme.inversePrimary,
-                ),
+                child: 
+                  SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                      ),
+                      child: IntrinsicHeight(
+                        child: NavigationRail(
+                          extended: constraints.maxWidth >= 600,
+                          destinations: appState.entryList.map((e) {
+                            return NavigationRailDestination(
+                              icon: Icon(Icons.home),
+                              label: Text(e[0]),
+                            );
+                          }).toList(),
+                          selectedIndex: selectedIndex,
+                          onDestinationSelected: (value) {
+                            print('new index selected: $value');
+                            setState(() {
+                              if (value == appState.entryList.length-1) {
+                                appState.createNewPage();
+                              }
+                              selectedIndex = value;
+                              });
+                          },
+                          backgroundColor:Theme.of(context).colorScheme.inversePrimary,
+                        ),
+                      ),
+                    ),
+                  ),
               ),
               Expanded(
                 child: Container(

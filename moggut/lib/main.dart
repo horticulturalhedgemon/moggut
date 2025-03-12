@@ -4,7 +4,6 @@ import 'my_home_page.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import "dart:convert";
 import 'dart:async';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 
 void main() {
@@ -33,7 +32,6 @@ class MyApp extends StatelessWidget {
 class MyAppState extends ChangeNotifier {
   
   //day, prompt
-  int dayCount = 0;
   List entryList = [];
   QuillController controller = QuillController.basic();
 
@@ -44,11 +42,16 @@ class MyAppState extends ChangeNotifier {
       return entryList;
     }
     print("fetchPrefs activated");
-    String contents = await File("files/entry_list.txt").readAsString();
-    final json = jsonDecode(contents);
-    entryList = json.map((e) => List<String>.from(e)).toList();
-    dayCount = entryList.length-1;
+    final response = await http.get(Uri.parse('http://127.0.0.1:5000/api/entry_list'));
+    if (response.statusCode == 200) {
+      var responseBody = jsonDecode(response.body);
+      entryList = responseBody;
+    }
+    else {
+      print('http call failed, status code ${response.statusCode.toString()}');
+    }
     return entryList;
+    
 }
 
   void saveEntry(QuillController controller, String fileId) async {
@@ -76,30 +79,20 @@ class MyAppState extends ChangeNotifier {
       }
   }
 
+  //submit request to create new page.
+  //if success, update entryList with new data
   void createNewPage() async {
-    dayCount += 1;
-    var returnPrompt = 'prompt $dayCount';
-    final response = await http.get(Uri.parse('http://127.0.0.1:5000/api/prompt'));
+    final response = await http.post(Uri.parse('http://127.0.0.1:5000/api/newEntry'));
       if (response.statusCode == 200) {
         var responseBody = response.body;
-        returnPrompt = '$responseBody $dayCount test';
+        entryList.insert(entryList.length-1,jsonDecode(responseBody));
+        print('file save success!');
       }
       else {
-        returnPrompt = 'http call failed, status code ${response.statusCode.toString()}';
+        print('http call failed, status code ${response.statusCode.toString()}');
       }
-    entryList.insert(entryList.length-1,["day $dayCount",returnPrompt, "$dayCount"]);
-    final response2 = await http.put(Uri.parse('http://127.0.0.1:5000/api/entry/${dayCount.toString()}'),
-      headers: {'Content-Type': 'application/json'},
-      body: [{"insert":"\n"}]);
-    if (response2.statusCode == 200) {
-      print('file save success!');
-    }
-    else {
-      print('http call failed, status code ${response2.statusCode.toString()}');
-    }
-    var file = await File("files/entry_list.txt").writeAsString(jsonEncode(entryList));
-    print('file length: ${file.length()}');
   }
+
     @override
   void dispose() {
     controller.dispose();

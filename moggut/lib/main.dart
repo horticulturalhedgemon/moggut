@@ -4,7 +4,7 @@ import 'my_home_page.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import "dart:convert";
 import 'dart:async';
-import 'dart:io';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(MyApp());
@@ -32,7 +32,6 @@ class MyApp extends StatelessWidget {
 class MyAppState extends ChangeNotifier {
   
   //day, prompt
-  int dayCount = 0;
   List entryList = [];
   QuillController controller = QuillController.basic();
 
@@ -43,37 +42,57 @@ class MyAppState extends ChangeNotifier {
       return entryList;
     }
     print("fetchPrefs activated");
-    String contents = await File("files/entry_list.txt").readAsString();
-    final json = jsonDecode(contents);
-    entryList = json.map((e) => List<String>.from(e)).toList();
-    dayCount = entryList.length-1;
+    final response = await http.get(Uri.parse('http://127.0.0.1:5000/api/entry_list'));
+    if (response.statusCode == 200) {
+      var responseBody = jsonDecode(response.body);
+      entryList = responseBody;
+    }
+    else {
+      print('http call failed, status code ${response.statusCode.toString()}');
+    }
     return entryList;
+    
 }
 
-  void saveEntry(QuillController controller, String filename) async {
+  void saveEntry(QuillController controller, String fileId) async {
     //should only work on desktop
-    final json = jsonEncode(controller.document.toDelta().toJson());
-    //static access uses class name, nonstatic access uses widget
-    var file = await File(filename).writeAsString(json);
-    print('file length: ${file.length()}');
+    final jsonEntry = jsonEncode(controller.document.toDelta().toJson());
+    final response = await http.put(Uri.parse('http://127.0.0.1:5000/api/entry/$fileId'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEntry);
+    if (response.statusCode == 200) {
+      print('file save success!');
+    }
+    else {
+      print('http call failed, status code ${response.statusCode.toString()}');
+    }
   }
 
-  void retrieveEntry(QuillController controller, String filename) async {
-    File(filename).readAsString().then((contents) {
-    final json = jsonDecode(contents);
-    controller.document = Document.fromJson(json);
-    });
+  void retrieveEntry(QuillController controller, String fileId) async {
+      final response = await http.get(Uri.parse('http://127.0.0.1:5000/api/entry/$fileId'));
+      if (response.statusCode == 200) {
+        var responseBody = jsonDecode(response.body);
+        controller.document = Document.fromJson(responseBody);
+      }
+      else {
+        print('http call failed, status code ${response.statusCode.toString()}');
+      }
   }
 
+  //submit request to create new page.
+  //if success, update entryList with new data
   void createNewPage() async {
-    dayCount += 1;
-    entryList.insert(entryList.length-1,["day $dayCount","prompt $dayCount", "files/file$dayCount.txt"]);
-    //json encode to bypass format errror: control character in string
-    var file = await File("files/file$dayCount.txt").writeAsString(jsonEncode([{"insert":"\n"}]));
-    print('file length: ${file.length()}');
-    file = await File("files/entry_list.txt").writeAsString(jsonEncode(entryList));
-    print('file length: ${file.length()}');
+    final response = await http.post(Uri.parse('http://127.0.0.1:5000/api/newEntry'));
+      if (response.statusCode == 200) {
+        var responseBody = response.body;
+        entryList.insert(entryList.length-1,jsonDecode(responseBody));
+        print('file save success!');
+      }
+      else {
+        print('http call failed, status code ${response.statusCode.toString()}');
+      }
   }
+
     @override
   void dispose() {
     controller.dispose();

@@ -34,15 +34,14 @@ class MyAppState extends ChangeNotifier {
   //day, prompt
   List entryList = [];
   QuillController controller = QuillController.basic();
-
   //loads entryList from file at app start (and maybe each build?).
-  Future<List> fetchPrefs() async {
+  Future<List> fetchEntries() async {
     //only run the first time
     if (entryList.isNotEmpty) {
       return entryList;
     }
     print("fetchPrefs activated");
-    final response = await http.get(Uri.parse('http://127.0.0.1:5000/api/entry_list'));
+    final response = await http.get(Uri.parse('http://127.0.0.1:5000/api/entry'));
     if (response.statusCode == 200) {
       var responseBody = jsonDecode(response.body);
       entryList = responseBody;
@@ -79,10 +78,10 @@ class MyAppState extends ChangeNotifier {
       }
   }
 
-  //submit request to create new page.
+  //check for new pages and add entries if necessary
   //if success, update entryList with new data
-  void createNewPage() async {
-    final response = await http.post(Uri.parse('http://127.0.0.1:5000/api/newEntry'));
+  void updateEntries() async {
+    final response = await http.post(Uri.parse('http://127.0.0.1:5000/api/entry'));
       if (response.statusCode == 200) {
         var responseBody = response.body;
         entryList.insert(entryList.length-1,jsonDecode(responseBody));

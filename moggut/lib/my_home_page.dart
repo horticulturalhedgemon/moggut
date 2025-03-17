@@ -1,4 +1,3 @@
-import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'entry_page.dart';
@@ -20,7 +19,7 @@ class _MyHomePageState extends State<MyHomePage> {
     Widget page;
     
     return FutureBuilder<List>(
-    future: appState.fetchPrefs(), // async work
+    future: appState.fetchEntries(), // async work
     builder: (BuildContext context, AsyncSnapshot<List> snapshot) {
        switch (snapshot.connectionState) {
          case ConnectionState.waiting: return Text('Loading....');
@@ -55,9 +54,6 @@ class _MyHomePageState extends State<MyHomePage> {
                           onDestinationSelected: (value) {
                             print('new index selected: $value');
                             setState(() {
-                              if (value == appState.entryList.length-1) {
-                                appState.createNewPage();
-                              }
                               selectedIndex = value;
                               });
                           },

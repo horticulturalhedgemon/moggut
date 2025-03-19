@@ -40,7 +40,6 @@ class MyAppState extends ChangeNotifier {
     if (entryList.isNotEmpty) {
       return entryList;
     }
-    print("fetchPrefs activated");
     final response = await http.get(Uri.parse('http://127.0.0.1:5000/api/entry'));
     if (response.statusCode == 200) {
       var responseBody = jsonDecode(response.body);

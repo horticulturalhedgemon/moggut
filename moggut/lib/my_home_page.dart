@@ -35,33 +35,58 @@ class _MyHomePageState extends State<MyHomePage> {
           body: Row(
             children: [
               SafeArea(
-                child: 
-                  SingleChildScrollView(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
-                      ),
-                      child: IntrinsicHeight(
-                        child: NavigationRail(
-                          extended: constraints.maxWidth >= 600,
-                          destinations: appState.entryList.map((e) {
-                            return NavigationRailDestination(
-                              icon: Icon(Icons.home),
-                              label: Text(e[0]),
-                            );
-                          }).toList(),
-                          selectedIndex: selectedIndex,
-                          onDestinationSelected: (value) {
-                            print('new index selected: $value');
-                            setState(() {
-                              selectedIndex = value;
-                              });
-                          },
-                          backgroundColor:Theme.of(context).colorScheme.inversePrimary,
+                child: IntrinsicWidth(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
+                          ),
+                          child: IntrinsicHeight(
+                            child: NavigationRail(
+                              extended: constraints.maxWidth >= 600,
+                              destinations: appState.entryList.map((e) {
+                                return NavigationRailDestination(
+                                  icon: Icon(Icons.library_books_outlined),
+                                  label: Text(e[0]),
+                                );
+                              }).toList(),
+                              selectedIndex: selectedIndex,
+                              onDestinationSelected: (value) {
+                                print('new index selected: $value');
+                                setState(() {
+                                  selectedIndex = value;
+                                  });
+                              },
+                              backgroundColor:Theme.of(context).colorScheme.inversePrimary,
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                    Container(
+                      color: Theme.of(context).colorScheme.inversePrimary,
+                      child: Row(
+                        children: [
+                          Spacer(),
+                          ElevatedButton(
+                          onPressed: () => appState.saveEntry(appState.controller,appState.entryList[selectedIndex][2]),
+                          child: Text('Save')),
+                          Spacer()
+                          ]
+                        )
+                    ),
+                    SizedBox(
+                      height:10,
+                      child: Container (color:Theme.of(context).colorScheme.inversePrimary)
+                    )
+                  ],
+                )
+              ),
               ),
               Expanded(
                 child: Container(

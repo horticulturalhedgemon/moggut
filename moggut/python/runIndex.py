@@ -4,7 +4,9 @@ import random;
 import os;
 from datetime import datetime, date, timedelta
 app = Flask(__name__)
-
+if not os.path.exists("files/entry_list.txt"):
+    with open("files/entry_list.txt", "w") as file:
+        file.write(json.dumps([]));
 with open("files/entry_list.txt", "r") as file:
     entryList = json.loads(file.read())
     print(entryList)
@@ -62,7 +64,7 @@ def generatePrompt():
     with open("files/words_dictionary.json", "r") as file:
         wordDict = json.load(file)
         wordList = list(wordDict.keys())
-        return ('%s %s %s' % (wordList[random.randint(0,370100)],wordList[random.randint(0,370100)],wordList[random.randint(0,370100)]))
+        return ('%s %s %s' % (wordList[random.randint(0,370100)].capitalize(),wordList[random.randint(0,370100)].capitalize(),wordList[random.randint(0,370100)].capitalize()))
 
 if __name__ == "__main__":
     app.run(debug=True)

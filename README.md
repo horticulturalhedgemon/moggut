@@ -9,5 +9,4 @@ In another terminal:
 flutter run lib/main.dart
 
 Built with:
-Flutter (Dart)
-Flask (Python)
+Flutter (Dart), Flask (Python)

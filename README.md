@@ -1,4 +1,3 @@
-Overview:
 Lightweight daily writing journal for Windows.
 
 To run:

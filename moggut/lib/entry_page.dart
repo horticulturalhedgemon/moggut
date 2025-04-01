@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_quill/flutter_quill.dart';
-import "dart:convert";
-import 'dart:async';
-import 'dart:io';
 import 'main.dart';
 
 class EntryPage extends StatefulWidget {
@@ -38,9 +35,8 @@ class _EntryPageState extends State<EntryPage> {
           children: [
             Padding(
               padding: const EdgeInsets.all(20),
-              child: Text('Day: ${widget.day} Prompt: ${widget.prompt}'),
+              child: Text('Prompt: ${widget.prompt}',style: TextStyle(fontSize: 20)),
             ),
-            ElevatedButton(onPressed: () => appState.saveEntry(appState.controller,widget.filename), child: Text('Save')),
             QuillSimpleToolbar(
               controller: appState.controller,
               configurations: const QuillSimpleToolbarConfigurations()

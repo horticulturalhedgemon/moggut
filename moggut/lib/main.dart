@@ -4,6 +4,7 @@ import 'my_home_page.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import "dart:convert";
 import 'dart:async';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 
 void main() {
@@ -30,19 +31,30 @@ class MyApp extends StatelessWidget {
 }
 
 class MyAppState extends ChangeNotifier {
-  
   //day, prompt
   List entryList = [];
   QuillController controller = QuillController.basic();
-
   //loads entryList from file at app start (and maybe each build?).
-  Future<List> fetchPrefs() async {
+  
+  static void startBackend() async {
+    var result = await Process.run('python', ['python/runIndex.py']);
+    print(result.stdout);
+    print("backend started");
+  }
+  static void quitBackend() async {
+      http.post(Uri.parse('http://127.0.0.1:5000/api/quit')).then((response) {
+        print(response.body);
+  }).catchError((error) {
+    print('Error during backend shutdown: $error');
+  });
+  }
+
+  Future<List> fetchEntries() async {
     //only run the first time
     if (entryList.isNotEmpty) {
       return entryList;
     }
-    print("fetchPrefs activated");
-    final response = await http.get(Uri.parse('http://127.0.0.1:5000/api/entry_list'));
+    final response = await http.get(Uri.parse('http://127.0.0.1:5000/api/entry'));
     if (response.statusCode == 200) {
       var responseBody = jsonDecode(response.body);
       entryList = responseBody;
@@ -79,10 +91,10 @@ class MyAppState extends ChangeNotifier {
       }
   }
 
-  //submit request to create new page.
+  //check for new pages and add entries if necessary
   //if success, update entryList with new data
-  void createNewPage() async {
-    final response = await http.post(Uri.parse('http://127.0.0.1:5000/api/newEntry'));
+  void updateEntries() async {
+    final response = await http.post(Uri.parse('http://127.0.0.1:5000/api/entry'));
       if (response.statusCode == 200) {
         var responseBody = response.body;
         entryList.insert(entryList.length-1,jsonDecode(responseBody));
@@ -92,11 +104,6 @@ class MyAppState extends ChangeNotifier {
         print('http call failed, status code ${response.statusCode.toString()}');
       }
   }
-
-    @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
-}
+  
 }
 

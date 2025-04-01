@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/scheduler.dart';
 import 'entry_page.dart';
 import 'main.dart';
 import 'dart:io';
@@ -11,13 +12,30 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
+  late AppLifecycleState? _state;
+  late final AppLifecycleListener _listener;
   var selectedIndex = 0;
+  dynamic appState;
+
+  @override
+  void initState() {
+    super.initState();
+    MyAppState.startBackend();
+    _state = SchedulerBinding.instance.lifecycleState;
+    _listener = AppLifecycleListener(
+        // This fires for each state change. Callbacks above fire only for
+        // specific state transitions.
+        onShow: () => print("shown"),
+        onInactive: () => print("inactive"),
+        onHide: () => MyAppState.quitBackend(),
+        onResume: () => print("resumed")
+      );
+    }
+
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
+    appState = context.watch<MyAppState>();
     Widget page;
-    
     return FutureBuilder<List>(
     future: appState.fetchEntries(), // async work
     builder: (BuildContext context, AsyncSnapshot<List> snapshot) {
@@ -49,7 +67,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           child: IntrinsicHeight(
                             child: NavigationRail(
                               extended: constraints.maxWidth >= 600,
-                              destinations: appState.entryList.map((e) {
+                              destinations: appState.entryList.map<NavigationRailDestination>((e) {
                                 return NavigationRailDestination(
                                   icon: Icon(Icons.library_books_outlined),
                                   label: Text(e[0]),
@@ -104,5 +122,10 @@ class _MyHomePageState extends State<MyHomePage> {
   }
   );
         }
+    @override
+  void dispose() {
+    _listener.dispose();
+    super.dispose();
+  }
        }
 

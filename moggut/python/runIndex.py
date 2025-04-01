@@ -1,8 +1,9 @@
 from flask import Flask, render_template, request, jsonify,Response
-import json;
+import json, signal;
 import random;
 import os;
-from datetime import datetime, date, timedelta
+import sys;
+from datetime import datetime, date, timedelta, time
 app = Flask(__name__)
 if not os.path.exists("files/entry_list.txt"):
     with open("files/entry_list.txt", "w") as file:
@@ -56,7 +57,15 @@ def manageEntry(id):
                 return jsonify(id);
         else:
             return "file does not exist", 404
+
     
+@app.post('/api/quit')
+def shutdown():
+    #copied from stackoverflow: https://stackoverflow.com/questions/15562446/how-to-stop-flask-application-without-using-ctrl-c
+    os.kill(os.getpid(), signal.SIGINT)
+    return 'Server shutting down...'
+
+
 def generatePrompt():
     #370100 words
     wordDict = None

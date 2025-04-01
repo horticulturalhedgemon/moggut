@@ -4,6 +4,7 @@ import 'my_home_page.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import "dart:convert";
 import 'dart:async';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 
 void main() {
@@ -30,11 +31,24 @@ class MyApp extends StatelessWidget {
 }
 
 class MyAppState extends ChangeNotifier {
-  
   //day, prompt
   List entryList = [];
   QuillController controller = QuillController.basic();
   //loads entryList from file at app start (and maybe each build?).
+  
+  static void startBackend() async {
+    var result = await Process.run('python', ['python/runIndex.py']);
+    print(result.stdout);
+    print("backend started");
+  }
+  static void quitBackend() async {
+      http.post(Uri.parse('http://127.0.0.1:5000/api/quit')).then((response) {
+        print(response.body);
+  }).catchError((error) {
+    print('Error during backend shutdown: $error');
+  });
+  }
+
   Future<List> fetchEntries() async {
     //only run the first time
     if (entryList.isNotEmpty) {
@@ -90,11 +104,6 @@ class MyAppState extends ChangeNotifier {
         print('http call failed, status code ${response.statusCode.toString()}');
       }
   }
-
-    @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
-}
+  
 }
 

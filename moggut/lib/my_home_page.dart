@@ -14,20 +14,22 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   late AppLifecycleState? _state;
   late final AppLifecycleListener _listener;
-  var selectedIndex = 0;
+  int selectedIndex = 0;
   dynamic appState;
-
+  Widget page = Spacer();
   @override
   void initState() {
     super.initState();
-    MyAppState.startBackend();
     _state = SchedulerBinding.instance.lifecycleState;
     _listener = AppLifecycleListener(
         // This fires for each state change. Callbacks above fire only for
         // specific state transitions.
         onShow: () => print("shown"),
         onInactive: () => print("inactive"),
-        onHide: () => MyAppState.quitBackend(),
+        onDetach: () => {
+          print("detached"),
+          MyAppState.quitBackend()
+          },
         onResume: () => print("resumed")
       );
     }
@@ -35,12 +37,87 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     appState = context.watch<MyAppState>();
-    Widget page;
+    MyAppState.dartLogger.w("hey");
     return FutureBuilder<List>(
     future: appState.fetchEntries(), // async work
     builder: (BuildContext context, AsyncSnapshot<List> snapshot) {
        switch (snapshot.connectionState) {
-         case ConnectionState.waiting: return Text('Loading....');
+         case ConnectionState.waiting: return LayoutBuilder(
+      builder: (context, constraints) {
+        return Scaffold(
+          body: Row(
+            children: [
+              SafeArea(
+                child: IntrinsicWidth(
+                child: Column(
+                  //mainAxisSize: MainAxisSize.max,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
+                          ),
+                          child: IntrinsicHeight(
+                            child: NavigationRail(
+                              extended: constraints.maxWidth >= 600,
+                              onDestinationSelected: (value) {
+                              print('new index selected: $value');
+                              setState(() {
+                                selectedIndex = value;
+                                });
+                              },
+                              destinations: appState.entryList.map<NavigationRailDestination>((e) {
+                                return NavigationRailDestination(
+                                  icon: Icon(Icons.library_books_outlined),
+                                  label: Text(e[0]),
+                                );
+                              }).toList(),
+                              selectedIndex: appState.entryList.isNotEmpty ? selectedIndex : null,
+                              backgroundColor:Theme.of(context).colorScheme.inversePrimary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      color: Theme.of(context).colorScheme.inversePrimary,
+                      child: Row(
+                        children: [
+                          Spacer(),
+                          ElevatedButton(
+                          onPressed: () => MyAppState.startBackend(),
+                          child: Text('Start Backend')),
+                          ElevatedButton(
+                          onPressed: () => appState.saveEntry(appState.controller,appState.entryList[selectedIndex][2]),
+                          child: Text('Save')),
+                          ElevatedButton(
+                          onPressed: () => MyAppState.quitBackend(),
+                          child: Text('Quit Backend')),
+                          Spacer()
+                          ]
+                        )
+                    ),
+                    SizedBox(
+                      height:10,
+                      child: Container (color:Theme.of(context).colorScheme.inversePrimary)
+                    )
+                  ],
+                )
+              ),
+              ),
+              Flexible(
+                child: Container(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  child: page,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+         );
          default:
            if (snapshot.hasError) {
               return Text('Error: ${snapshot.error}');
@@ -55,10 +132,10 @@ class _MyHomePageState extends State<MyHomePage> {
               SafeArea(
                 child: IntrinsicWidth(
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  //mainAxisSize: MainAxisSize.max,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
+                    Flexible(
                       child: SingleChildScrollView(
                         child: ConstrainedBox(
                           constraints: BoxConstraints(
@@ -92,8 +169,14 @@ class _MyHomePageState extends State<MyHomePage> {
                         children: [
                           Spacer(),
                           ElevatedButton(
+                          onPressed: () => MyAppState.startBackend(),
+                          child: Text('Start Backend')),
+                          ElevatedButton(
                           onPressed: () => appState.saveEntry(appState.controller,appState.entryList[selectedIndex][2]),
                           child: Text('Save')),
+                          ElevatedButton(
+                          onPressed: () => MyAppState.quitBackend(),
+                          child: Text('Quit Backend')),
                           Spacer()
                           ]
                         )
@@ -106,7 +189,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 )
               ),
               ),
-              Expanded(
+              Flexible(
                 child: Container(
                   color: Theme.of(context).colorScheme.primaryContainer,
                   child: page

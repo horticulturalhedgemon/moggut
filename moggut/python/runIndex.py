@@ -14,6 +14,10 @@ with open("files/entry_list.txt", "r") as file:
     print(type(entryList))
 entryId = len(entryList)
 
+#check if connection alive
+@app.route("/api/ping", methods = ['GET'])
+def ping():
+    return "Still alive."
 
 #add a new entry to entryList, create a new file 
 @app.route("/api/entry", methods = ['GET'])
@@ -26,11 +30,10 @@ def manageEntries():
             lastDate = datetime.strptime(entryList[-1][0], "%B %d, %Y").date()
         else:
             lastDate = date.today() - timedelta(days=1)
-        while lastDate < date.today():
+        if lastDate < date.today():
             #create file, generate a random prompt, increment daycount/id, and add to entrylist
             #return prompt, daycount, file contents
-            newDate = lastDate + timedelta(days=1)
-            lastDate = newDate
+            newDate = date.today()
             newEntry = [newDate.strftime("%B %d, %Y"),generatePrompt(),str(entryId)]
             entryList.append(newEntry)
             with open("files/entry_list.txt", "w") as file:
@@ -42,15 +45,14 @@ def manageEntries():
         
         
         
-
 @app.route("/api/entry/<int:id>", methods = ['GET','PUT'])
 def manageEntry(id):
+    #get file string, return as json
     if (request.method == 'GET'):
-        #get string output, turn to json, return
         with open("files/file"+str(id)+".txt", "r") as file:
             return file.read();
+    #if file exists, update file with contents
     if (request.method == 'PUT'):
-        #if file exists, update file
         if os.path.exists("files/file"+str(id)+".txt"):
             with open("files/file"+str(id)+".txt", "w") as file:
                 file.write(json.dumps(request.json));
@@ -65,9 +67,8 @@ def shutdown():
     os.kill(os.getpid(), signal.SIGINT)
     return 'Server shutting down...'
 
-
+#return random prompt for file creation
 def generatePrompt():
-    #370100 words
     wordDict = None
     wordList = None
     with open("files/words_dictionary.json", "r") as file:
